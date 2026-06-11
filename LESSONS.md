@@ -38,12 +38,50 @@ PixiJS v8 + GSAP + Vercel), wiederverwendbar für künftige App-Builds.
   `boot()`-Ende ein No-op (Menü+Sprites übers Netz). UI sofort binden, Handler
   awaitet ein `ready`-Promise.
 
+## Video im Attract (Photoreal-Integration 11./12.06.)
+- **`removeAttribute('src')` stoppt ein ladendes `<video>` NICHT** — laut
+  HTML-Spec verwirft nur `load()` die laufende Media-Resource. Ohne `load()`
+  feuert `canplay` trotzdem, `play()` startet die alte Resource neu und ein
+  per `display:none` unsichtbares Video dekodiert die ganze Session weiter
+  (GPU-/Akku-Drain parallel zum Pixi-Konfigurator). Stop-Pfad immer:
+  `pause()` → `removeAttribute('src')` → `load()`.
+- **Generation-Token an JEDER await-Grenze prüfen** — vor `play()` UND danach.
+  Nach einem reinen Stop gibt es keinen „neueren Versuch", der aufräumt; im
+  Stale-Branch selbst pausieren (außer `.playing` gesetzt = neuerer Besitzer).
+- Geteiltes `<video>`-Element + lazy load + canplay-Timeout-Fallback auf
+  Sprites ist ein gutes Muster — aber der Test „Start-Tap bleibt möglich"
+  muss das **Lade-Fenster** treffen (tippen BEVOR `.playing` da ist), sonst
+  testet er die Race nie.
+
+## Service Worker + `<video>`
+- **Range-Requests immer am SW vorbeilassen**
+  (`if (e.request.headers.has('range')) return;`). Browser holen Video mit
+  Range (Chrome `bytes=0-`, iOS `bytes=0-1`) → Server antwortet 206 →
+  `cache.put(206)` wirft TypeError, die MP4s landen nie im Cache. Schlimmer:
+  eine je gecachte volle 200 auf einen Range-Request quittiert iOS Safari mit
+  Media-Error → Video dauerhaft tot. Zusätzlich `res.status === 200` vor
+  jedem `cache.put` guarden.
+- SW registriert nur außerhalb localhost → die lokale Suite testet SW+Video
+  nie zusammen. Live-E2E gegen die deployte Domain ist Pflicht.
+
+## Playwright webServer
+- **`npm run build && node server.js` leakt das node-Kind beim Teardown** —
+  Playwright killt nur den Shell-Wrapper, der Folgelauf bricht mit „port
+  already used" (`reuseExistingServer: false`). Fix: `… && exec node server.js`
+  — `exec` macht node zur Haupt-PID. Damit läuft auch `test:2x` durch.
+
 ## Architektur / Deploy
 - Vercel-Catch-all-Function mit In-Memory-Store reicht für eine Demo mit
   Gast↔Theken-Sync (eine Function = ein warmer Container). Polling 2 s.
   Für echten Betrieb: KV/Redis — im Code als Adapter vorgesehen.
 - `vercel domains add <domain> --scope <team>` (Ein-Argument-Form!) hängt die
   Demo-Subdomain ans gelinkte Projekt; Wildcard-CNAME existiert bereits.
+- **`git push` triggerte hier KEINEN Vercel-Build**, obwohl `vercel git connect`
+  „already connected" meldet (vermutlich Git-Author `osman.oe@live.de` nicht
+  bei GitHub verifiziert — bekanntes Blocked-Pattern). Workaround:
+  `vercel deploy --prod` aus dem Repo; nach Push 2–3 min auf Marker pollen
+  statt blind warten. Erster `vercel deploy` warf zudem einen 500 beim
+  File-Upload — einfacher Retry reichte.
 - WebAudio-Synth statt Kie-SFX erneut die richtige Wahl für UI-Sounds:
   0 €, 0 Latenz, kein Bridge-Ausfallrisiko (pour=Bandpass-Noise-Sweep,
   plop=Sinus-Pitch-Drop, chime=Dreiklang-Arpeggio).
