@@ -521,19 +521,22 @@ async function preloadSprites() {
   await Promise.all(jobs);
 }
 
-async function boot() {
-  state.menu = await api.menu();
-  [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
-  window.__mixr = { state, cup, show, api }; // deterministic test hook
+// UI is bound immediately; slow networks may tap "start" before menu/sprites
+// finished loading — the handler awaits `ready` instead of being a no-op.
+let readyResolve;
+const ready = new Promise(r => { readyResolve = r; });
 
-  cup.onFx = (name) => audio.play(name);
+function bindUI() {
   const soundBtn = $('#sound-toggle');
-  soundBtn.hidden = false;
   soundBtn.textContent = audio.enabled ? '🔊' : '🔇';
   soundBtn.onclick = () => { soundBtn.textContent = audio.toggle() ? '🔊' : '🔇'; audio.play('tap'); };
 
-  $('#btn-start').onclick = () => {
+  $('#btn-start').onclick = async () => {
     audio.ensure(); // first user gesture unlocks audio (mobile autoplay policy)
+    const btn = $('#btn-start');
+    btn.disabled = true;
+    await ready;
+    btn.disabled = false;
     haptic();
     state.attractRunning = false;
     cup.reset();
@@ -570,6 +573,16 @@ async function boot() {
     a.href = url; a.download = 'mixr-drink.png'; a.click();
   };
 
+}
+
+async function boot() {
+  bindUI();
+  state.menu = await api.menu();
+  [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
+  window.__mixr = { state, cup, show, api }; // deterministic test hook
+  cup.onFx = (name) => audio.play(name);
+  $('#sound-toggle').hidden = false;
+
   // poll menu so sold-out toggles from /admin apply live mid-flow
   menuPollTimer = setInterval(async () => {
     try {
@@ -582,6 +595,7 @@ async function boot() {
 
   show('attract');
   attractLoop();
+  readyResolve();
 }
 
 boot().catch((e) => {

@@ -110,6 +110,7 @@ test('sold-out toggle via admin API applies live in guest flow', async ({ page, 
 });
 
 test('menu.json edit (sold-out) is served live without code change', async ({ request }) => {
+  test.skip(!!process.env.E2E_BASE_URL, 'local-fs test — covered by admin-override test against live');
   const original = fs.readFileSync(MENU, 'utf8');
   try {
     const menu = JSON.parse(original);

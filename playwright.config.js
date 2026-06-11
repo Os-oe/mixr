@@ -1,12 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// E2E_BASE_URL=https://mixr.demo.osai.solutions npx playwright test -> live E2E
+const LIVE = process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: './tests',
   timeout: 45000,
   retries: 0,
   workers: 1, // shared in-memory API state -> serial
   use: {
-    baseURL: 'http://localhost:8787',
+    baseURL: LIVE || 'http://localhost:8787',
     browserName: 'chromium',
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -19,7 +22,7 @@ export default defineConfig({
       args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
     }
   },
-  webServer: {
+  webServer: LIVE ? undefined : {
     command: 'npm run build && node server/dev.js --serve-dist',
     port: 8787,
     reuseExistingServer: false,
