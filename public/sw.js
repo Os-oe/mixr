@@ -1,6 +1,7 @@
 // MIXR service worker — precache app shell + sprites, network-first for API.
 const CACHE = 'mixr-v1';
-const PRECACHE = ['/', '/manifest.webmanifest', '/icon.svg', '/menu.json'];
+const SPRITES = ['tapioka', 'popping-boba', 'kokos-jelly', 'eiswuerfel', 'erdbeere', 'mango', 'banane', 'blaubeeren', 'kiwi', 'minze', 'sahne', 'karamell-drizzle'];
+const PRECACHE = ['/', '/manifest.webmanifest', '/icon.svg', '/menu.json', ...SPRITES.map(s => `/sprites/${s}.png`)];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));

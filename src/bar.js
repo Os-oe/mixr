@@ -49,5 +49,10 @@ function age(ts) {
 function esc(s) { return String(s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); }
 
 refresh();
-setInterval(refresh, 2000);
+setInterval(() => refresh(), 2000);
 window.__mixrBar = { refresh };
+
+// QR for guests (points at the guest app root)
+import('qrcode').then(QR => {
+  QR.toCanvas(document.querySelector('#qr'), location.origin + '/', { width: 64, margin: 1 }).catch(() => {});
+}).catch(() => {});

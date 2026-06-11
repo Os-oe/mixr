@@ -2,6 +2,7 @@
 import { Assets } from 'pixi.js';
 import { CupScene } from './cup/cupScene.js';
 import { api } from './api.js';
+import { audio } from './audio.js';
 import {
   optionsFor, iceAllowed, aggregateAllergens, totalPrice, formatPrice, drinkName
 } from './engine/constraints.js';
@@ -46,7 +47,7 @@ function selectedIds() {
 function ingredient(id) { return state.menu.ingredients.find(i => i.id === id); }
 function themeDef() { return state.menu.themes.find(t => t.id === state.theme); }
 
-function haptic() { try { navigator.vibrate?.(10); } catch {} }
+function haptic() { try { navigator.vibrate?.(10); } catch {} audio.play('tap'); }
 
 function setAccent(theme) {
   if (!theme) return;
@@ -475,7 +476,8 @@ async function onReady() {
   show('done');
   cup.celebrate();
   cup.shineSweep();
-  haptic();
+  audio.play('chime');
+  try { navigator.vibrate?.([30, 40, 60]); } catch {}
   renderShareCard();
 }
 
@@ -524,7 +526,14 @@ async function boot() {
   [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
   window.__mixr = { state, cup, show, api }; // deterministic test hook
 
+  cup.onFx = (name) => audio.play(name);
+  const soundBtn = $('#sound-toggle');
+  soundBtn.hidden = false;
+  soundBtn.textContent = audio.enabled ? '🔊' : '🔇';
+  soundBtn.onclick = () => { soundBtn.textContent = audio.toggle() ? '🔊' : '🔇'; audio.play('tap'); };
+
   $('#btn-start').onclick = () => {
+    audio.ensure(); // first user gesture unlocks audio (mobile autoplay policy)
     haptic();
     state.attractRunning = false;
     cup.reset();
@@ -575,7 +584,16 @@ async function boot() {
   attractLoop();
 }
 
-boot();
+boot().catch((e) => {
+  console.error('boot failed', e);
+  const panel = document.querySelector('#panel');
+  panel.innerHTML = `
+    <div class="screen active" style="text-align:center;padding-top:30px">
+      <h2 class="step-title">Kurz durchatmen ☕</h2>
+      <p class="hero-sub">MIXR konnte nicht laden — bitte Verbindung prüfen und neu versuchen.</p>
+      <button class="cta" onclick="location.reload()">Neu laden</button>
+    </div>`;
+});
 
 // PWA service worker
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {

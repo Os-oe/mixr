@@ -1,5 +1,7 @@
 // Catch the Toppings — 2D canvas mini game for the waiting phase.
 // Uses the guest's own cup + topping colors/sprites.
+import { audio } from '../audio.js';
+
 export class CatchGame {
   constructor(canvas, hud, { theme, toppings = [], onEnd, duration = 30 } = {}) {
     this.cv = canvas; this.hud = hud;
@@ -71,8 +73,8 @@ export class CatchGame {
       if (f.caught || f.missed) continue;
       if (f.y > 0.82 && f.y < 0.92 && Math.abs(f.x - this.cupX) < cupW / 2 + 0.03) {
         f.caught = true;
-        if (f.bad) { this.score = Math.max(0, this.score - 5); this.combo = 0; }
-        else { this.combo++; this.score += 10 + Math.min(10, this.combo); }
+        if (f.bad) { this.score = Math.max(0, this.score - 5); this.combo = 0; audio.play('bad'); }
+        else { this.combo++; this.score += 10 + Math.min(10, this.combo); audio.play('blip'); }
         try { navigator.vibrate?.(6); } catch {}
       } else if (f.y > 1.05) f.missed = true;
     }
