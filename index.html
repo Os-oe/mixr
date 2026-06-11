@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MIXR — Dein Drink. Live gemixt.</title>
+  <meta name="description" content="Konfiguriere deinen Drink in 3 Schritten und sieh ihn live entstehen." />
+  <meta name="theme-color" content="#FAF6F0" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app" data-screen="attract">
+    <header id="topbar">
+      <div class="logo" id="logo">MIXR</div>
+      <ol id="stepper" aria-label="Schritte">
+        <li data-step="1"></li><li data-step="2"></li><li data-step="3"></li>
+      </ol>
+      <button id="sound-toggle" aria-label="Sound an/aus" hidden>🔇</button>
+    </header>
+
+    <main id="stage-wrap">
+      <div id="stage"></div>
+      <div id="drink-label" hidden></div>
+    </main>
+
+    <section id="panel">
+      <!-- ATTRACT -->
+      <div class="screen active" data-screen-id="attract">
+        <h1 class="hero-title">Dein Drink.<br /><span class="grad">Live gemixt.</span></h1>
+        <p class="hero-sub">Stell dir deinen Drink in 3 Schritten zusammen — und sieh zu, wie er im Becher entsteht.</p>
+        <button class="cta" id="btn-start" data-testid="start">Drink bauen</button>
+        <p class="hint">Bezahlt wird ganz entspannt an der Theke.</p>
+      </div>
+
+      <!-- STEP 1: THEME + BASIS -->
+      <div class="screen" data-screen-id="step1">
+        <h2 class="step-title">Was darf's sein?</h2>
+        <div id="theme-tabs" class="seg-row" role="tablist"></div>
+        <div id="base-cards" class="card-row" data-testid="base-cards"></div>
+      </div>
+
+      <!-- STEP 2: MIX -->
+      <div class="screen" data-screen-id="step2">
+        <h2 class="step-title">Dein Mix</h2>
+        <div id="mix-cards" class="chip-grid" data-testid="mix-cards"></div>
+        <div class="level-row" id="level-suesse"></div>
+        <div class="level-row" id="level-eis"></div>
+      </div>
+
+      <!-- STEP 3: TOPPINGS -->
+      <div class="screen" data-screen-id="step3">
+        <h2 class="step-title">Toppings</h2>
+        <div id="topping-chips" class="chip-grid" data-testid="topping-chips"></div>
+        <div id="upsell-slot"></div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="screen" data-screen-id="summary">
+        <h2 class="step-title" id="summary-name">Dein Drink</h2>
+        <ul id="summary-items"></ul>
+        <div id="allergen-ampel" data-testid="allergene"></div>
+        <div class="price-row"><span>Gesamt</span><strong id="summary-price">0,00 €</strong></div>
+        <button class="cta" id="btn-order" data-testid="order">Bestellen · an der Theke zahlen</button>
+      </div>
+
+      <!-- WAITING -->
+      <div class="screen" data-screen-id="waiting">
+        <div id="order-status-story" data-testid="status-story"></div>
+        <div id="funfact-card" class="funfact" hidden></div>
+        <button class="cta ghost" id="btn-game" data-testid="play-game">🎮 Catch the Toppings</button>
+        <div id="game-wrap" hidden>
+          <canvas id="game-canvas"></canvas>
+          <div id="game-hud"></div>
+        </div>
+        <div id="highscore-box"></div>
+      </div>
+
+      <!-- DONE -->
+      <div class="screen" data-screen-id="done">
+        <h2 class="step-title">Fertig! 🎉</h2>
+        <p class="pickup">Abholen unter <strong id="pickup-nummer">M-000</strong></p>
+        <div id="share-card-slot"></div>
+        <button class="cta ghost" id="btn-share" data-testid="share">Share-Card speichern</button>
+        <button class="cta ghost" id="btn-restart">Noch einen Drink</button>
+      </div>
+    </section>
+
+    <nav id="flow-nav">
+      <button id="btn-back" class="nav-btn" hidden>Zurück</button>
+      <button id="btn-next" class="nav-btn primary" data-testid="next" hidden>Weiter</button>
+    </nav>
+
+    <footer id="powered">powered by <strong>OsAI</strong></footer>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

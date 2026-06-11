@@ -1,0 +1,22 @@
+{
+  "name": "mixr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/dev.js & vite",
+    "build": "vite build",
+    "serve": "node server/dev.js --serve-dist",
+    "test": "playwright test",
+    "test:2x": "playwright test && playwright test"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "gsap": "^3.12.5",
+    "pixi.js": "^8.6.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "vite": "^6.0.0"
+  }
+}

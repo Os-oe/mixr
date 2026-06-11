@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MIXR — Theke</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#2B2331; --card:#3a3142; --ink:#FAF6F0; --accent:#9B7EDE; --ok:#3fae6a; --warn:#e8a23c; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:'Nunito',sans-serif; min-height:100vh; }
+    header { display:flex; align-items:center; gap:14px; padding:18px 22px; }
+    h1 { font-family:'Baloo 2'; font-size:26px; margin:0; }
+    h1 span { color:var(--accent); }
+    .count { margin-left:auto; background:var(--accent); border-radius:999px; padding:4px 14px; font-weight:800; }
+    #orders { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; padding:0 22px 30px; }
+    .order-card { background:var(--card); border-radius:18px; padding:16px; border-left:6px solid var(--accent); }
+    .order-card.fast_fertig { border-left-color:var(--warn); }
+    .order-card.fertig { border-left-color:var(--ok); opacity:.75; }
+    .nummer { font-family:'Baloo 2'; font-size:20px; font-weight:800; }
+    .dname { color:#cfc4dd; font-weight:700; margin:2px 0 8px; }
+    .items { font-size:13px; color:#a99cb8; margin-bottom:6px; }
+    .allergen { font-size:11.5px; color:var(--warn); font-weight:700; margin-bottom:10px; }
+    .price { font-weight:800; float:right; }
+    .actions { display:flex; gap:8px; margin-top:8px; }
+    .actions button { flex:1; padding:10px 8px; border:0; border-radius:12px; font-family:'Baloo 2'; font-weight:700; font-size:14px; cursor:pointer; background:#4d4258; color:var(--ink); }
+    .actions button.primary { background:var(--accent); }
+    .actions button.done { background:var(--ok); }
+    .empty { grid-column:1/-1; text-align:center; color:#8a7d99; padding:60px 0; font-size:16px; }
+    .age { font-size:11px; color:#8a7d99; float:right; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MIXR <span>· Theke</span></h1>
+    <div class="count" id="count">0</div>
+  </header>
+  <main id="orders"><div class="empty">Noch keine Bestellungen — Gäste scannen den QR-Code.</div></main>
+  <script type="module" src="/src/bar.js"></script>
+</body>
+</html>

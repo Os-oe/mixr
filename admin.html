@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MIXR — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#FAF6F0; --ink:#2B2331; --card:#fff; --accent:#9B7EDE; --muted:#8a8093; --bad:#e05555; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:'Nunito',sans-serif; max-width:680px; margin-inline:auto; padding:0 18px 40px; }
+    h1 { font-family:'Baloo 2'; font-size:24px; margin:18px 0 4px; }
+    .sub { color:var(--muted); font-size:14px; margin-bottom:18px; }
+    h2 { font-family:'Baloo 2'; font-size:16px; margin:20px 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .row { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:10px 14px; margin-bottom:8px; box-shadow:0 4px 14px rgba(43,35,49,.07); }
+    .row.soldout { opacity:.55; }
+    .name { font-weight:800; flex:1; }
+    .name small { display:block; color:var(--muted); font-weight:600; }
+    .preis-input { width:64px; padding:6px 8px; border-radius:10px; border:1.5px solid #e5ddee; font-family:'Nunito'; font-weight:700; text-align:right; }
+    .toggle { position:relative; width:50px; height:28px; border-radius:999px; border:0; cursor:pointer; background:#d8d0e2; transition:background .2s; }
+    .toggle.on { background:var(--accent); }
+    .toggle::after { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:left .2s; }
+    .toggle.on::after { left:25px; }
+    .printer-card { background:#fff8ec; border:2px dashed #f0d9a8; border-radius:14px; padding:12px 16px; font-size:13.5px; margin-top:24px; color:#7a6230; }
+    .reset { background:none; border:0; color:var(--bad); font-weight:800; cursor:pointer; font-family:'Nunito'; padding:8px 0; }
+  </style>
+</head>
+<body>
+  <h1>MIXR · Laden-Admin</h1>
+  <p class="sub">Änderungen wirken <b>sofort</b> im Gast-Flow — Sold-out, Preise, Verfügbarkeit.</p>
+  <div id="lists"></div>
+  <button class="reset" id="reset">↺ Alle Overrides zurücksetzen</button>
+  <div class="printer-card">🖨 <b>Bondrucker:</b> In der Vollversion wird hier ein Epson-ePOS-Drucker angebunden — jede Bestellung druckt automatisch einen Bon an der Theke. (Demo: nicht aktiv)</div>
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>
