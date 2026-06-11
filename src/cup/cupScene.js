@@ -2,7 +2,7 @@
 // primitives (pour / drop / layer / sprinkle / swirl) + exploded view.
 // Phase 1: procedural placeholder graphics. Sprite textures plug into the
 // same API later (drop({texture}) / setCupTextures()).
-import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { gsap } from 'gsap';
 
 const VW = 360, VH = 430;
@@ -268,7 +268,7 @@ export class CupScene {
   }
 
   // ---- PRIMITIVE 2: drop -------------------------------------------------
-  drop({ id = 'x', color = '#5C4033', texture = null, count = 5, float = false, radius = 9 } = {}) {
+  drop({ id = 'x', color = '#5C4033', texture = null, count = 5, float = false, radius = 9, label = null } = {}) {
     this.onFx?.('drop');
     this._wake(2400);
     const sprites = this.items.get(id) || [];
@@ -292,7 +292,7 @@ export class CupScene {
       const x = CUP.cx + (Math.random() - 0.5) * (halfW(targetY) * 1.5);
       sp.position.set(x, 30);
       sp.rotation = (Math.random() - 0.5) * 0.8;
-      sp.__float = float; sp.__targetY = targetY;
+      sp.__float = float; sp.__targetY = targetY; sp.__label = label;
       this.contentC.addChild(sp);
       sprites.push(sp);
       proms.push(new Promise(res => {
@@ -441,18 +441,35 @@ export class CupScene {
     tl.to(this.liquidC, { y: -34, duration: 0.7, ease: 'power3.out' }, '<');
     tl.to(this.bandC, { y: -78, duration: 0.7, ease: 'power3.out' }, '<');
     if (this.creamSprite) tl.to(this.creamSprite, { y: this.creamSprite.y - 120, duration: 0.7, ease: 'power3.out' }, '<');
-    // every dropped ingredient flies to its hover slot on a ring
+    // every dropped ingredient flies to its hover slot on a ring (+ label)
+    this._explodeLabels = [];
     const sprites = [...this.items.values()].flat().filter(s => !s.destroyed);
+    const labelled = new Set();
     sprites.forEach((sp, i) => {
       const ang = (i / Math.max(1, sprites.length)) * Math.PI * 2 - Math.PI / 2;
       const rx = 132 + (i % 3) * 16, ry = 120 + (i % 2) * 22;
+      const tx = CUP.cx + Math.cos(ang) * rx, ty = cy + Math.sin(ang) * ry;
       sp.__ex = sp.x; sp.__ey = sp.y;
       tl.to(sp, {
-        x: CUP.cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry,
+        x: tx, y: ty,
         rotation: sp.rotation + (Math.random() - 0.5) * 2,
         duration: 0.75, ease: 'back.out(1.4)'
       }, 0.18 + i * 0.045);
       tl.to(sp, { y: '+=7', duration: 0.9, yoyo: true, repeat: Math.ceil(hold), ease: 'sine.inOut' }, '>');
+      // one floating label per ingredient
+      if (sp.__label && !labelled.has(sp.__label)) {
+        labelled.add(sp.__label);
+        const txt = new Text({
+          text: sp.__label,
+          style: { fontFamily: 'Baloo 2, Nunito, sans-serif', fontSize: 13, fontWeight: '700', fill: 0x2b2331 }
+        });
+        txt.anchor.set(0.5);
+        txt.position.set(tx, ty + 30);
+        txt.alpha = 0;
+        this.fxC.addChild(txt);
+        this._explodeLabels.push(txt);
+        tl.to(txt, { alpha: 0.85, duration: 0.3 }, 0.6 + i * 0.045);
+      }
     });
     tl.to({}, { duration: Math.max(0.2, hold - 1) });
     return new Promise(res => tl.eventCallback('onComplete', res));
@@ -461,6 +478,10 @@ export class CupScene {
   unexplode() {
     if (!this.exploded) return Promise.resolve();
     const tl = gsap.timeline();
+    for (const txt of this._explodeLabels || []) {
+      tl.to(txt, { alpha: 0, duration: 0.2, onComplete: () => txt.destroy() }, 0);
+    }
+    this._explodeLabels = [];
     const sprites = [...this.items.values()].flat().filter(s => !s.destroyed);
     sprites.forEach((sp, i) => {
       tl.to(sp, { x: sp.__ex, y: sp.__ey, duration: 0.55, ease: 'power3.inOut' }, i * 0.03);

@@ -270,7 +270,7 @@ async function setLevel(key, idx) {
   renderLevels();
   if (key === 'eis' && idx !== prev) {
     cup.removeItem('eis');
-    if (idx > 0) await cup.drop({ id: 'eis', color: '#dff0f7', texture: textures.eis, count: idx, float: true, radius: DROP_TUNING.eis.radius });
+    if (idx > 0) await cup.drop({ id: 'eis', color: '#dff0f7', texture: textures.eis, count: idx, float: true, radius: DROP_TUNING.eis.radius, label: 'Eis' });
   }
 }
 
@@ -297,7 +297,7 @@ async function toggleTopping(id) {
   state.toppings.push(id);
   renderStep3();
   await animateIngredient(ing);
-  maybeUpsell();
+  setTimeout(maybeUpsell, 1200); // let the drop animation finish first
 }
 
 // ---------- visual upselling: max 1 suggestion, drops into the cup on trial ----------
@@ -343,7 +343,7 @@ async function animateIngredient(ing) {
     case 'drop': {
       const float = ing.tags?.includes('frucht') || ing.tags?.includes('kraut');
       return cup.drop({
-        id: ing.id, color: placeholderColor(ing), texture: textures[ing.id],
+        id: ing.id, color: placeholderColor(ing), texture: textures[ing.id], label: ing.name,
         count: tun.count ?? (ing.tags?.includes('perle') ? 7 : 4), radius: tun.radius ?? 9, float
       });
     }
@@ -474,11 +474,11 @@ async function refreshHighscore() {
 async function onReady() {
   $('#pickup-nummer').textContent = state.order.nummer;
   show('done');
+  await renderShareCard(); // snapshot the clean hero shot BEFORE confetti
   cup.celebrate();
   cup.shineSweep();
   audio.play('chime');
   try { navigator.vibrate?.([30, 40, 60]); } catch {}
-  renderShareCard();
 }
 
 async function renderShareCard() {
@@ -545,7 +545,13 @@ function bindUI() {
   };
   $('#btn-next').onclick = () => {
     haptic();
-    if (state.screen === 'step1') { show('step2'); renderStep2(); }
+    if (state.screen === 'step1') {
+      show('step2'); renderStep2();
+      // default ice level is visible in the cup too (summary must match cup)
+      if (state.eis > 0 && !cup.items.has('eis') && iceAllowed(state.menu, selectedIds())) {
+        cup.drop({ id: 'eis', color: '#dff0f7', texture: textures.eis, count: state.eis, float: true, radius: DROP_TUNING.eis.radius });
+      }
+    }
     else if (state.screen === 'step2') {
       if (state.mixes.length) cup.swirl();
       show('step3'); renderStep3();
