@@ -92,8 +92,10 @@ function updateNextEnabled() {
 // -> bestehende Sprite-Explosion als Fallback. Start-Tap bleibt jederzeit
 // möglich (Boot-Race-Lesson: UI ist gebunden, Handler awaitet `ready`).
 const ATTRACT_VIDEO_TIMEOUT = 1500;
+let attractVideoGen = 0; // entwertet überholte Ladeversuche (geteiltes <video>)
 
 function stopAttractVideo() {
+  attractVideoGen++;
   const v = $('#attract-video');
   if (!v) return;
   v.classList.remove('playing');
@@ -106,6 +108,7 @@ async function tryAttractVideo(themeId) {
   const conf = photorealFor(themeId);
   const v = $('#attract-video');
   if (!conf?.video || !v) { stopAttractVideo(); return false; }
+  const gen = ++attractVideoGen;
   try {
     if (conf.poster) v.poster = conf.poster;
     v.src = conf.video;
@@ -116,10 +119,15 @@ async function tryAttractVideo(themeId) {
       v.load();
     });
     await v.play();
+    // überholt (neuerer Versuch besitzt das Element) -> nichts anfassen
+    if (gen !== attractVideoGen) return true;
+    // User kann während des Ladens schon getippt haben -> nicht reaktivieren
+    if (!state.attractRunning || state.screen !== 'attract') { stopAttractVideo(); return true; }
     v.classList.add('playing');
     $('#stage-wrap').classList.add('video-active');
     return true;
   } catch (e) {
+    if (gen !== attractVideoGen) return true; // überholt -> kein Fallback-Start
     console.warn('attract video -> sprite fallback', e?.message || e);
     stopAttractVideo();
     return false;
