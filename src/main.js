@@ -1,4 +1,5 @@
 // MIXR guest app — 3-step configurator with live cup animation.
+import { Assets } from 'pixi.js';
 import { CupScene } from './cup/cupScene.js';
 import { api } from './api.js';
 import {
@@ -23,6 +24,15 @@ const state = {
 };
 
 let cup = null;
+const textures = {}; // ingredientId -> Pixi texture
+// cluster sprites contain several pieces — tune drop count/size per id
+const DROP_TUNING = {
+  tapioka: { count: 2, radius: 27 }, 'popping-boba': { count: 2, radius: 25 },
+  'kokos-jelly': { count: 2, radius: 23 }, erdbeere: { count: 2, radius: 25 },
+  'mango-wuerfel': { count: 2, radius: 23 }, banane: { count: 2, radius: 21 },
+  blaubeeren: { count: 2, radius: 21 }, kiwi: { count: 1, radius: 25 },
+  minze: { count: 1, radius: 23 }, eis: { radius: 21 }
+};
 let menuPollTimer = null;
 let orderPollTimer = null;
 let funfactTimer = null;
@@ -80,8 +90,10 @@ async function attractLoop() {
   // sample drink
   cup.setTheme('bubble-tea', '#9B7EDE');
   await cup.pour({ color: '#9B7EDE', add: 0.55, duration: 1.2 });
-  await cup.drop({ id: 'tapioka', color: '#3a2a24', count: 6 });
-  await cup.drop({ id: 'erdbeere', color: '#E84A6F', count: 3, float: true });
+  if (!state.attractRunning) return;
+  await cup.drop({ id: 'tapioka', color: '#3a2a24', texture: textures.tapioka, ...(DROP_TUNING.tapioka) });
+  if (!state.attractRunning) return;
+  await cup.drop({ id: 'erdbeere', color: '#E84A6F', texture: textures.erdbeere, float: true, ...(DROP_TUNING.erdbeere) });
   while (state.attractRunning) {
     await cup.explode({ hold: 2.0 });
     if (!state.attractRunning) break;
@@ -257,7 +269,7 @@ async function setLevel(key, idx) {
   renderLevels();
   if (key === 'eis' && idx !== prev) {
     cup.removeItem('eis');
-    if (idx > 0) await cup.drop({ id: 'eis', color: '#dff0f7', count: idx + 1, float: true, radius: 11 });
+    if (idx > 0) await cup.drop({ id: 'eis', color: '#dff0f7', texture: textures.eis, count: idx, float: true, radius: DROP_TUNING.eis.radius });
   }
 }
 
@@ -287,16 +299,25 @@ async function toggleTopping(id) {
 }
 
 async function animateIngredient(ing) {
-  if (ing.tags?.includes('haube')) return cup.addCream({});
+  if (ing.tags?.includes('haube')) return cup.addCream({ texture: textures[ing.id] });
+  const tun = DROP_TUNING[ing.id] || {};
   switch (ing.animation) {
     case 'drop': {
       const float = ing.tags?.includes('frucht') || ing.tags?.includes('kraut');
-      return cup.drop({ id: ing.id, color: placeholderColor(ing), count: ing.tags?.includes('perle') ? 7 : 4, float });
+      return cup.drop({
+        id: ing.id, color: placeholderColor(ing), texture: textures[ing.id],
+        count: tun.count ?? (ing.tags?.includes('perle') ? 7 : 4), radius: tun.radius ?? 9, float
+      });
     }
     case 'sprinkle': return cup.sprinkle({ id: ing.id, color: ing.tint || '#5C3A21' });
-    case 'layer': return cup.layerBand({ id: ing.id, color: ing.tint || '#C77B33' });
+    case 'layer':
+      // drizzle with a sprite lands on top instead of a band
+      if (ing.kategorie === 'topping' && textures[ing.id]) {
+        return cup.drop({ id: ing.id, texture: textures[ing.id], count: 1, radius: 30, float: true });
+      }
+      return cup.layerBand({ id: ing.id, color: ing.tint || '#C77B33' });
     case 'pour': return cup.pour({ color: ing.tint, add: 0.1, duration: 0.8 });
-    default: return cup.drop({ id: ing.id, color: placeholderColor(ing) });
+    default: return cup.drop({ id: ing.id, color: placeholderColor(ing), texture: textures[ing.id] });
   }
 }
 
@@ -448,9 +469,22 @@ async function startGame() {
 }
 
 // ---------- bootstrap ----------
+async function preloadSprites() {
+  const jobs = [];
+  const seen = new Set();
+  for (const ing of state.menu.ingredients) {
+    if (ing.sprite && !seen.has(ing.sprite)) {
+      seen.add(ing.sprite);
+      jobs.push(Assets.load(`/sprites/${ing.sprite}`).then(t => { textures[ing.id] = t; }).catch(() => {}));
+    }
+  }
+  jobs.push(Assets.load('/sprites/eiswuerfel.png').then(t => { textures.eis = t; }).catch(() => {}));
+  await Promise.all(jobs);
+}
+
 async function boot() {
   state.menu = await api.menu();
-  cup = await CupScene.create($('#stage'));
+  [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
   window.__mixr = { state, cup, show, api }; // deterministic test hook
 
   $('#btn-start').onclick = () => {

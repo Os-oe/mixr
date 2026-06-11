@@ -12,7 +12,12 @@ export default defineConfig({
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 2,
-    headless: true
+    headless: true,
+    launchOptions: {
+      // real GPU in headless (otherwise SwiftShader software rendering
+      // makes FPS numbers meaningless as a phone proxy)
+      args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
+    }
   },
   webServer: {
     command: 'npm run build && node server/dev.js --serve-dist',

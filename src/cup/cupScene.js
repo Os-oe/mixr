@@ -97,8 +97,6 @@ export class CupScene {
       const sc = Math.min(w / VW, h / VH);
       this.root.scale.set(sc);
       this.root.position.set((w - VW * sc) / 2, (h - VH * sc) / 2);
-      this.maskG.scale.set(sc);
-      this.maskG.position.set((w - VW * sc) / 2, (h - VH * sc) / 2);
     };
     fit();
     new ResizeObserver(fit).observe(el);
@@ -115,24 +113,41 @@ export class CupScene {
     ]).fill({ color, alpha });
   }
 
-  _drawCup() {
+  _drawCup(themeId = null) {
     const { cx, topY, botY, topW, botW } = CUP;
-    // back wall (placeholder — replaced by sprite in phase 2)
+    const edge = 0xe7e0ee;
+    const accentNum = rgbToNum(hexToRgb(this.accent || '#9B7EDE'));
+    // back wall
     this.backG.clear();
     this.backG.poly([
       cx - topW / 2, topY, cx + topW / 2, topY,
       cx + botW / 2, botY, cx - botW / 2, botY
-    ]).fill({ color: 0xffffff, alpha: 0.55 });
+    ]).fill({ color: 0xffffff, alpha: 0.5 });
     this.backG.ellipse(cx, topY, topW / 2, 10).fill({ color: 0xffffff, alpha: 0.6 });
+    // straw behind everything (theme accent), not for coffee
+    if (themeId && themeId !== 'coffee') {
+      const sw = themeId === 'bubble-tea' ? 17 : 11;
+      this.backG.roundRect(cx + 26, topY - 64, sw, 78, sw / 2).fill({ color: accentNum, alpha: 0.95 });
+      this.backG.roundRect(cx + 26 + sw * 0.22, topY - 64, sw * 0.22, 78, 2).fill({ color: 0xffffff, alpha: 0.35 });
+    }
     // front wall: rim + glass edges + gloss stripe
     this.frontG.clear();
-    this.frontG.ellipse(cx, topY, topW / 2, 10).stroke({ width: 4, color: 0xe7e0ee });
     this.frontG.moveTo(cx - topW / 2, topY).lineTo(cx - botW / 2, botY)
       .moveTo(cx + topW / 2, topY).lineTo(cx + botW / 2, botY)
-      .stroke({ width: 4, color: 0xe7e0ee });
-    this.frontG.moveTo(cx - botW / 2, botY).lineTo(cx + botW / 2, botY).stroke({ width: 5, color: 0xe7e0ee });
+      .stroke({ width: 4.5, color: edge });
+    this.frontG.moveTo(cx - botW / 2 + 1, botY).lineTo(cx + botW / 2 - 1, botY).stroke({ width: 6, color: edge });
+    // base shadow
+    this.frontG.ellipse(cx, botY + 8, botW / 2 + 8, 7).fill({ color: 0x2b2331, alpha: 0.08 });
+    // rim: coffee gets a lid, others an open rim ring
+    if (themeId === 'coffee') {
+      this.frontG.roundRect(cx - topW / 2 - 7, topY - 14, topW + 14, 16, 7).fill({ color: 0xfdfbf7 }).stroke({ width: 2.5, color: edge });
+      this.frontG.roundRect(cx - 24, topY - 22, 48, 10, 5).fill({ color: 0xfdfbf7 }).stroke({ width: 2.5, color: edge });
+    } else {
+      this.frontG.ellipse(cx, topY, topW / 2, 10).stroke({ width: 4.5, color: edge });
+    }
     // gloss
-    this.frontG.roundRect(cx - topW / 2 + 16, topY + 26, 13, botY - topY - 60, 7).fill({ color: 0xffffff, alpha: 0.35 });
+    this.frontG.roundRect(cx - topW / 2 + 16, topY + 26, 13, botY - topY - 60, 7).fill({ color: 0xffffff, alpha: 0.32 });
+    this.frontG.roundRect(cx + topW / 2 - 30, topY + 40, 7, botY - topY - 110, 4).fill({ color: 0xffffff, alpha: 0.22 });
   }
 
   // phase 2: swap placeholder graphics for sprite textures
@@ -157,6 +172,7 @@ export class CupScene {
   setTheme(themeId, accent) {
     this.theme = themeId;
     this.accent = accent || this.accent;
+    if (!this.cupTextures) this._drawCup(themeId);
   }
 
   _surfaceY() {
@@ -165,10 +181,19 @@ export class CupScene {
   }
 
   _tick(tk) {
+    // only animate the liquid while something is happening (perf on mobile)
+    const active = performance.now() < (this.activeUntil || 0);
+    if (!active) {
+      if (!this._idleDrawn) { this.waveAmp = 0; this._drawLiquid(); this._idleDrawn = true; }
+      return;
+    }
+    this._idleDrawn = false;
     this.wavePhase += tk.deltaMS / 280;
     if (this.waveAmp > 1.4) this.waveAmp *= 0.985;
     this._drawLiquid();
   }
+
+  _wake(ms = 2600) { this.activeUntil = performance.now() + ms; this._idleDrawn = false; }
 
   _drawLiquid() {
     const g = this.liquidG;
@@ -210,6 +235,7 @@ export class CupScene {
   // ---- PRIMITIVE 1: pour -------------------------------------------------
   pour({ color = '#A9743F', add = 0.5, duration = 1.5, blend = 0.65 } = {}) {
     this.onFx?.('pour');
+    this._wake(duration * 1000 + 1800);
     const target = Math.min(0.86, this.level + add);
     const startColor = this.level <= 0.01 ? color : this.color;
     const endColor = this.level <= 0.01 ? color : mixHex(this.color, color, blend);
@@ -244,6 +270,7 @@ export class CupScene {
   // ---- PRIMITIVE 2: drop -------------------------------------------------
   drop({ id = 'x', color = '#5C4033', texture = null, count = 5, float = false, radius = 9 } = {}) {
     this.onFx?.('drop');
+    this._wake(2400);
     const sprites = this.items.get(id) || [];
     const yB = CUP.botY - CUP.inset - 6;
     const proms = [];
@@ -308,6 +335,7 @@ export class CupScene {
   // ---- PRIMITIVE 3: layer ------------------------------------------------
   layerBand({ id = 'band', color = '#8B5A2B' } = {}) {
     this.onFx?.('layer');
+    this._wake(1600);
     const band = { id, color, frac: Math.max(0.06, this.level * 0.3), h: 0, alpha: 0.9 };
     this.bands.push(band);
     return new Promise(res => {
@@ -324,6 +352,7 @@ export class CupScene {
   // ---- PRIMITIVE 4: sprinkle ----------------------------------------------
   sprinkle({ id = 'sprk', color = '#5C3A21', count = 22 } = {}) {
     this.onFx?.('sprinkle');
+    this._wake(2200);
     const sprites = this.items.get(id) || [];
     const proms = [];
     for (let i = 0; i < count; i++) {
@@ -346,6 +375,7 @@ export class CupScene {
   // ---- PRIMITIVE 5: swirl --------------------------------------------------
   swirl({ duration = 1.1 } = {}) {
     this.onFx?.('swirl');
+    this._wake(2200);
     const tl = gsap.timeline();
     const all = [...this.contentC.children, ...this.surfaceC.children];
     tl.to(this.root, { rotation: 0.05, duration: 0.09, yoyo: true, repeat: 5, transformOrigin: '50% 80%' }, 0);
@@ -398,6 +428,7 @@ export class CupScene {
     if (this.exploded) return Promise.resolve();
     this.exploded = true;
     this.onFx?.('explode');
+    this._wake(2000);
     const tl = gsap.timeline();
     this._explodeTl = tl;
     const cy = (CUP.topY + CUP.botY) / 2;
@@ -440,6 +471,7 @@ export class CupScene {
       this.contentC.mask = this.maskG; this.surfaceC.mask = this.maskG;
       this.exploded = false;
       this.waveAmp = 5;
+      this._wake(2000);
     });
     return new Promise(res => tl.eventCallback('onComplete', res));
   }
@@ -481,6 +513,7 @@ export class CupScene {
     [this.backC, this.frontC, this.liquidC, this.bandC].forEach(c => { c.y = 0; c.alpha = 1; });
     this.contentC.mask = this.maskG; this.surfaceC.mask = this.maskG;
     this.exploded = false;
+    this._wake(400);
   }
 
   async snapshot() {
