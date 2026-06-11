@@ -23,7 +23,10 @@ export default defineConfig({
     }
   },
   webServer: LIVE ? undefined : {
-    command: 'npm run build && node server/dev.js --serve-dist',
+    // exec: nach dem Build ersetzt node die Shell als Haupt-PID — sonst killt
+    // Playwright beim Teardown nur den Wrapper und das node-Kind leakt
+    // ("port 8787 already used" im Folgelauf).
+    command: 'npm run build && exec node server/dev.js --serve-dist',
     port: 8787,
     reuseExistingServer: false,
     timeout: 120000

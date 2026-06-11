@@ -102,6 +102,10 @@ function stopAttractVideo() {
   $('#stage-wrap').classList.remove('video-active');
   try { v.pause(); } catch {}
   v.removeAttribute('src');
+  // removeAttribute('src') verwirft die laufende Media-Resource NICHT (HTML-Spec)
+  // -> load() bricht den Fetch wirklich ab, sonst feuert canplay trotzdem und
+  // ein verstecktes Video dekodiert die ganze Session weiter (P1-Fix 12.06.).
+  try { v.load(); } catch {}
 }
 
 async function tryAttractVideo(themeId) {
@@ -118,9 +122,17 @@ async function tryAttractVideo(themeId) {
       v.addEventListener('error', () => { clearTimeout(to); rej(new Error('video error')); }, { once: true });
       v.load();
     });
-    await v.play();
-    // überholt (neuerer Versuch besitzt das Element) -> nichts anfassen
+    // überholt (Stop oder neuerer Versuch) -> Wiedergabe gar nicht erst starten
     if (gen !== attractVideoGen) return true;
+    await v.play();
+    // überholt WÄHREND play(): nach reinem Stop gibt es keinen neueren Versuch,
+    // der pausieren würde -> selbst pausieren, sonst läuft das versteckte Video
+    // die ganze Session weiter. `.playing` gesetzt = neuerer Versuch besitzt das
+    // Element und Wiedergabe ist gewollt -> dann nichts anfassen.
+    if (gen !== attractVideoGen) {
+      if (!v.classList.contains('playing')) { try { v.pause(); } catch {} }
+      return true;
+    }
     // User kann während des Ladens schon getippt haben -> nicht reaktivieren
     if (!state.attractRunning || state.screen !== 'attract') { stopAttractVideo(); return true; }
     v.classList.add('playing');
