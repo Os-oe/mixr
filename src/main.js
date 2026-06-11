@@ -6,6 +6,7 @@ import { audio } from './audio.js';
 import {
   optionsFor, iceAllowed, aggregateAllergens, totalPrice, formatPrice, drinkName
 } from './engine/constraints.js';
+import { photorealFor } from './photoreal.js';
 
 const $ = (sel) => document.querySelector(sel);
 const app = $('#app');
@@ -86,9 +87,50 @@ function updateNextEnabled() {
 }
 
 // ---------- attract loop ----------
-async function attractLoop() {
+// Fotorealistischer Video-Loop (theme-gemappt, src/photoreal.js). Lädt lazy,
+// nie blockierend: null-Mapping, Ladefehler oder canplay-Timeout (1,5 s)
+// -> bestehende Sprite-Explosion als Fallback. Start-Tap bleibt jederzeit
+// möglich (Boot-Race-Lesson: UI ist gebunden, Handler awaitet `ready`).
+const ATTRACT_VIDEO_TIMEOUT = 1500;
+
+function stopAttractVideo() {
+  const v = $('#attract-video');
+  if (!v) return;
+  v.classList.remove('playing');
+  $('#stage-wrap').classList.remove('video-active');
+  try { v.pause(); } catch {}
+  v.removeAttribute('src');
+}
+
+async function tryAttractVideo(themeId) {
+  const conf = photorealFor(themeId);
+  const v = $('#attract-video');
+  if (!conf?.video || !v) { stopAttractVideo(); return false; }
+  try {
+    if (conf.poster) v.poster = conf.poster;
+    v.src = conf.video;
+    await new Promise((res, rej) => {
+      const to = setTimeout(() => rej(new Error('canplay timeout')), ATTRACT_VIDEO_TIMEOUT);
+      v.addEventListener('canplay', () => { clearTimeout(to); res(); }, { once: true });
+      v.addEventListener('error', () => { clearTimeout(to); rej(new Error('video error')); }, { once: true });
+      v.load();
+    });
+    await v.play();
+    v.classList.add('playing');
+    $('#stage-wrap').classList.add('video-active');
+    return true;
+  } catch (e) {
+    console.warn('attract video -> sprite fallback', e?.message || e);
+    stopAttractVideo();
+    return false;
+  }
+}
+
+async function attractLoop(themeId = state.theme || 'bubble-tea') {
   state.attractRunning = true;
-  // sample drink
+  if (await tryAttractVideo(themeId)) return; // Video loopt selbst (loop-Attribut)
+  if (!state.attractRunning) return;
+  // sample drink (Sprite-Explosion — Fallback, unverändert)
   cup.setTheme('bubble-tea', '#9B7EDE');
   await cup.pour({ color: '#9B7EDE', add: 0.55, duration: 1.2 });
   if (!state.attractRunning) return;
@@ -539,6 +581,7 @@ function bindUI() {
     btn.disabled = false;
     haptic();
     state.attractRunning = false;
+    stopAttractVideo();
     cup.reset();
     show('step1');
     renderStep1();
@@ -585,7 +628,7 @@ async function boot() {
   bindUI();
   state.menu = await api.menu();
   [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
-  window.__mixr = { state, cup, show, api }; // deterministic test hook
+  window.__mixr = { state, cup, show, api, startAttract: attractLoop, stopAttractVideo }; // deterministic test hook
   cup.onFx = (name) => audio.play(name);
   $('#sound-toggle').hidden = false;
 

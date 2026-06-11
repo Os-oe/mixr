@@ -46,8 +46,26 @@ body {
 
 /* stage */
 #stage-wrap { position: relative; height: 38dvh; min-height: 240px; }
-#stage { position: absolute; inset: 0; }
+#stage { position: absolute; inset: 0; z-index: 1; }
 #stage canvas { display: block; }
+
+/* fotorealistischer Attract-Loop — liegt unter dem Cup-Canvas, nur im
+   Attract-Screen sichtbar, wenn das Video wirklich spielt (.playing) */
+#attract-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  z-index: 0; display: none; background: var(--bg);
+}
+#attract-video-overlay {
+  position: absolute; inset: 0; z-index: 0; display: none; pointer-events: none;
+  background: linear-gradient(to top, rgba(250, 246, 240, 0.92) 0%, rgba(250, 246, 240, 0) 34%);
+}
+#app[data-screen="attract"] #attract-video.playing,
+#app[data-screen="attract"] #attract-video.playing + #attract-video-overlay {
+  display: block;
+}
+/* spielt das Video, verschwindet der (leere) illustrierte Becher dahinter */
+#app[data-screen="attract"] #stage-wrap.video-active #stage { opacity: 0; }
 #drink-label {
   position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
   font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 15px;
