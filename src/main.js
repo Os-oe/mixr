@@ -296,6 +296,43 @@ async function toggleTopping(id) {
   state.toppings.push(id);
   renderStep3();
   await animateIngredient(ing);
+  maybeUpsell();
+}
+
+// ---------- visual upselling: max 1 suggestion, drops into the cup on trial ----------
+function maybeUpsell() {
+  if (state.upsellDone || state.screen !== 'step3') return;
+  const opts = optionsFor(state.menu, state.theme, 'topping', selectedIds())
+    .filter(o => o.ok && !state.toppings.includes(o.ing.id) && o.ing.animation === 'drop' && textures[o.ing.id]);
+  if (!opts.length) return;
+  state.upsellDone = true;
+  const pick = opts.find(o => o.ing.tags?.includes('frucht')) || opts[0];
+  const ing = pick.ing;
+  // trial drop: one translucent sample falls in
+  const tun = DROP_TUNING[ing.id] || {};
+  cup.drop({ id: '__upsell', texture: textures[ing.id], count: 1, radius: tun.radius ?? 22, float: ing.tags?.includes('frucht') });
+  setTimeout(() => {
+    const arr = cup.items.get('__upsell') || [];
+    for (const sp of arr) sp.alpha = 0.55;
+  }, 700);
+  const slot = $('#upsell-slot');
+  slot.innerHTML = `
+    <div class="upsell" data-testid="upsell">
+      <span>✨ Dazu passt: <b>${ing.name}</b> (+${formatPrice(ing.preis)})</span>
+      <button class="yes" data-testid="upsell-yes">Ja!</button>
+      <button class="no">Nein</button>
+    </div>`;
+  slot.querySelector('.yes').onclick = () => {
+    haptic();
+    cup.removeItem('__upsell');
+    slot.innerHTML = '';
+    toggleTopping(ing.id);
+  };
+  slot.querySelector('.no').onclick = () => {
+    haptic();
+    cup.removeItem('__upsell');
+    slot.innerHTML = '';
+  };
 }
 
 async function animateIngredient(ing) {
@@ -454,7 +491,7 @@ async function startGame() {
   const { CatchGame } = await import('./game/catch.js');
   $('#game-wrap').hidden = false;
   $('#btn-game').hidden = true;
-  const game = new CatchGame($('#game-canvas'), $('#game-hud'), {
+  const game = window.__mixrGame = new CatchGame($('#game-canvas'), $('#game-hud'), {
     theme: themeDef(),
     toppings: state.toppings.map(id => ingredient(id)),
     onEnd: async (score) => {
@@ -501,7 +538,11 @@ async function boot() {
       if (state.mixes.length) cup.swirl();
       show('step3'); renderStep3();
     }
-    else if (state.screen === 'step3') { show('summary'); renderSummary(); }
+    else if (state.screen === 'step3') {
+      cup.removeItem('__upsell');
+      $('#upsell-slot').innerHTML = '';
+      show('summary'); renderSummary();
+    }
   };
   $('#btn-back').onclick = () => {
     haptic();

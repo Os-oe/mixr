@@ -43,16 +43,17 @@ test('full flow: configure drink, order reaches /bar, bar drives status to done'
   await expect(page.getByTestId('status-story').locator('.story-step[data-status="eingegangen"]')).toHaveClass(/current/);
 
   // bar tab (second client, same server) sees the order
+  const orderId = await page.evaluate(() => window.__mixr.state.order.id);
   const bar = await context.newPage();
   await bar.goto('/bar');
-  const card = bar.locator('.order-card').first();
+  const card = bar.locator(`.order-card[data-order="${orderId}"]`);
   await expect(card).toBeVisible({ timeout: 8000 });
   await expect(card).toContainText('Taro');
 
   // drive status: eingegangen -> in_arbeit -> fast_fertig -> fertig
   for (const next of ['in_arbeit', 'fast_fertig', 'fertig']) {
-    await bar.locator(`button[data-next="${next}"]`).first().click();
-    await bar.waitForTimeout(300);
+    await card.locator(`button[data-next="${next}"]`).click();
+    await expect(card).toHaveAttribute('data-status', next, { timeout: 8000 });
   }
   // guest screen celebrates
   await expect(page.locator('[data-screen-id="done"]')).toHaveClass(/active/, { timeout: 10000 });

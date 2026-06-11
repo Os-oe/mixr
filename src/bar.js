@@ -8,9 +8,13 @@ const NEXT = {
   fertig: { label: '🛍 Abgeholt', status: 'abgeholt', cls: '' }
 };
 
-async function refresh() {
+let lastPayload = '';
+async function refresh(force = false) {
   let orders = [];
   try { orders = await api.orders(); } catch { return; }
+  const payload = JSON.stringify(orders.map(o => [o.id, o.status, o.ts]));
+  if (!force && payload === lastPayload) return; // no DOM churn -> no lost clicks
+  lastPayload = payload;
   const main = document.querySelector('#orders');
   document.querySelector('#count').textContent = orders.filter(o => o.status !== 'fertig').length;
   if (!orders.length) {
@@ -33,7 +37,7 @@ async function refresh() {
       if (!b.dataset.next) return;
       b.disabled = true;
       try { await api.setStatus(b.dataset.id, b.dataset.next); } catch {}
-      refresh();
+      refresh(true);
     };
   });
 }
