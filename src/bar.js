@@ -26,7 +26,7 @@ async function refresh(force = false) {
       <span class="age">${age(o.ts)}</span>
       <div class="nummer">${o.nummer} <span class="price">${o.preis.toFixed(2).replace('.', ',')} €</span></div>
       <div class="dname">${esc(o.drinkName)}</div>
-      <div class="items">${o.items.map(i => esc(i.name)).join(' · ')}<br/>Süße ${['0%','25%','50%','75%','100%'][o.levels?.suesse ?? 2]} · Eis ${['kein','wenig','normal','viel'][o.levels?.eis ?? 2]}</div>
+      <div class="items">${o.items.map(i => esc(i.name)).join(' · ')}<br/>${o.levels?.size ? `Größe ${esc(o.levels.size)} · ` : ''}Süße ${['0%','25%','50%','75%','100%'][o.levels?.suesse ?? 2]} · Eis ${['kein','wenig','normal','viel'][o.levels?.eis ?? 2]}</div>
       ${o.allergene?.length ? `<div class="allergen">⚠ Allergene: ${o.allergene.join(', ')}</div>` : ''}
       <div class="actions">
         <button class="${NEXT[o.status]?.cls || ''}" data-id="${o.id}" data-next="${NEXT[o.status]?.status || ''}">${NEXT[o.status]?.label || '—'}</button>

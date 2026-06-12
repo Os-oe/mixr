@@ -7,6 +7,7 @@ import {
   optionsFor, iceAllowed, aggregateAllergens, totalPrice, formatPrice, drinkName
 } from './engine/constraints.js';
 import { photorealFor } from './photoreal.js';
+import { SignatureMode } from './signature-mode.js';
 
 const $ = (sel) => document.querySelector(sel);
 const app = $('#app');
@@ -22,7 +23,12 @@ const state = {
   eis: 2,
   order: null,
   attractRunning: false,
-  gameLoaded: false
+  gameLoaded: false,
+  // Signature-Modus (parallel zum Classic-Konfigurator, Default laut /admin)
+  mode: 'signature',
+  sigMenu: null,
+  sig: null,
+  sigOrderMeta: null
 };
 
 let cup = null;
@@ -39,8 +45,25 @@ let menuPollTimer = null;
 let orderPollTimer = null;
 let funfactTimer = null;
 
-const SCREENS = ['attract', 'step1', 'step2', 'step3', 'summary', 'waiting', 'done'];
+const SCREENS = ['attract', 'step1', 'step2', 'step3', 'summary', 'waiting', 'done', 'sig-gallery', 'sig-story', 'sig-custom'];
 const STEP_OF = { step1: 1, step2: 2, step3: 3 };
+
+// ---------- mode handling (Signature-Karte | Create your own) ----------
+function setMode(mode, remember = true) {
+  state.mode = mode;
+  app.dataset.mode = mode;
+  if (remember) { try { localStorage.setItem('mixr-mode', mode); } catch {} }
+  applyModeCtas();
+}
+
+// Der gemerkte/Default-Modus bestimmt, welcher CTA primär wirkt — beide bleiben tappbar.
+function applyModeCtas() {
+  const sigBtn = $('#btn-signature'), startBtn = $('#btn-start');
+  if (!sigBtn || !startBtn) return;
+  sigBtn.hidden = !state.sigMenu;
+  sigBtn.classList.toggle('ghost', state.mode === 'classic');
+  startBtn.classList.toggle('ghost', state.mode !== 'classic');
+}
 
 function selectedIds() {
   return [state.base, ...state.mixes, ...state.toppings].filter(Boolean);
@@ -461,6 +484,7 @@ function renderAmpel(ids) {
 
 // ---------- order + waiting ----------
 async function placeOrder() {
+  state.sigOrderMeta = null; // Classic-Order -> Share-Card nutzt Theme-Hero/Snapshot
   const ids = selectedIds();
   const order = await api.createOrder({
     drinkName: drinkNameNow(),
@@ -537,8 +561,10 @@ async function onReady() {
   $('#pickup-nummer').textContent = state.order.nummer;
   show('done');
   await renderShareCard(); // snapshot the clean hero shot BEFORE confetti
-  cup.celebrate();
-  cup.shineSweep();
+  if (state.mode === 'classic') { // Signature: Bühne ist ausgeblendet, ruhig bleiben
+    cup.celebrate();
+    cup.shineSweep();
+  }
   audio.play('chime');
   try { navigator.vibrate?.([30, 40, 60]); } catch {}
 }
@@ -600,11 +626,26 @@ function bindUI() {
     await ready;
     btn.disabled = false;
     haptic();
+    setMode('classic');
+    state.sigOrderMeta = null;
     state.attractRunning = false;
     stopAttractVideo();
     cup.reset();
     show('step1');
     renderStep1();
+  };
+  $('#btn-signature').onclick = async () => {
+    audio.ensure();
+    const btn = $('#btn-signature');
+    btn.disabled = true;
+    await ready;
+    btn.disabled = false;
+    if (!state.sig) return; // signature-menu.json nicht ladbar -> Classic bleibt
+    haptic();
+    setMode('signature');
+    state.attractRunning = false;
+    stopAttractVideo();
+    state.sig.openGallery();
   };
   $('#btn-next').onclick = () => {
     haptic();
@@ -647,8 +688,22 @@ function bindUI() {
 async function boot() {
   bindUI();
   state.menu = await api.menu();
-  [cup] = await Promise.all([CupScene.create($('#stage')), preloadSprites()]);
-  window.__mixr = { state, cup, show, api, startAttract: attractLoop, stopAttractVideo }; // deterministic test hook
+  [cup] = await Promise.all([
+    CupScene.create($('#stage')),
+    preloadSprites(),
+    // Signature-Karte ist optional: schlägt der Fetch fehl, bleibt Classic nutzbar
+    api.signatureMenu().then(m => { state.sigMenu = m; }).catch(e => console.warn('signature menu', e?.message || e))
+  ]);
+  // gemerkte Wahl (localStorage) schlägt den /admin-Default
+  let saved = null;
+  try { saved = localStorage.getItem('mixr-mode'); } catch {}
+  const fallback = state.sigMenu ? (state.sigMenu.defaultMode || 'signature') : 'classic';
+  setMode(saved === 'signature' || saved === 'classic' ? saved : fallback, false);
+  if (state.sigMenu) {
+    state.sig = new SignatureMode({ state, show, startWaiting, haptic });
+    state.onSignatureExit = () => { attractLoop(); }; // zurück zum Attract -> Loop wieder an
+  }
+  window.__mixr = { state, cup, show, api, startAttract: attractLoop, stopAttractVideo, setMode }; // deterministic test hook
   cup.onFx = (name) => audio.play(name);
   $('#sound-toggle').hidden = false;
 
@@ -660,6 +715,7 @@ async function boot() {
       if (state.screen === 'step2') renderStep2();
       if (state.screen === 'step3') renderStep3();
     } catch {}
+    if (state.screen === 'sig-gallery') state.sig?.poll();
   }, 4000);
 
   show('attract');

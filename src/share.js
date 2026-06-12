@@ -1,5 +1,6 @@
 // Share card: drink name + hero shot of the configured cup, savable PNG.
 // Theme-gemapptes fotorealistisches Hero-JPG als Hintergrund (src/photoreal.js);
+// Signature-Bestellungen (state.sigOrderMeta) nutzen das Drink-Hero direkt;
 // kein Mapping / Ladefehler -> bestehender illustrierter Snapshot-Look.
 import { photorealFor } from './photoreal.js';
 
@@ -12,8 +13,9 @@ export async function buildShareCard(state, cup, theme) {
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
 
-  const hero = await loadHeroImage(theme);
-  if (hero) drawHeroCard(ctx, W, H, hero, state, theme);
+  const sig = state.sigOrderMeta;
+  const hero = await loadHeroImage(sig?.hero ?? photorealFor(theme?.id)?.hero);
+  if (hero) drawHeroCard(ctx, W, H, hero, state, theme, sig);
   else await drawIllustratedCard(ctx, W, H, cup, theme);
 
   slot.innerHTML = '';
@@ -23,8 +25,7 @@ export async function buildShareCard(state, cup, theme) {
   slot.appendChild(out);
 }
 
-function loadHeroImage(theme) {
-  const url = photorealFor(theme?.id)?.hero;
+function loadHeroImage(url) {
   if (!url) return Promise.resolve(null);
   return new Promise((res) => {
     const img = new Image();
@@ -35,7 +36,7 @@ function loadHeroImage(theme) {
 }
 
 // ---------- fotorealistische Card ----------
-function drawHeroCard(ctx, W, H, hero, state, theme) {
+function drawHeroCard(ctx, W, H, hero, state, theme, sig) {
   // Hero cover-fit, zentriert
   const ratio = hero.width / hero.height;
   let hh = H, ww = hh * ratio;
@@ -59,19 +60,19 @@ function drawHeroCard(ctx, W, H, hero, state, theme) {
   ctx.fillStyle = '#FAF6F0';
   ctx.font = '800 64px "Baloo 2", sans-serif';
   ctx.fillText('MIXR', W / 2, 96);
-  // Drink-Name
+  // Drink-Name (Signature: kuratierter Name statt DOM-Summary)
   ctx.font = '700 48px "Baloo 2", sans-serif';
   ctx.fillStyle = '#FAF6F0';
-  wrapText(ctx, document.querySelector('#summary-name')?.textContent || 'Mein Drink', W / 2, 770, W - 120, 56);
+  wrapText(ctx, sig?.name || document.querySelector('#summary-name')?.textContent || 'Mein Drink', W / 2, 770, W - 120, 56);
   // Zutaten
   ctx.font = '600 26px Nunito, sans-serif';
   ctx.fillStyle = 'rgba(250,246,240,0.92)';
-  wrapText(ctx, ingredientLine(state), W / 2, 836, W - 140, 34);
+  wrapText(ctx, sig?.zutatenLine ?? ingredientLine(state), W / 2, 836, W - 140, 34);
   // Preis in Akzentfarbe
-  const price = document.querySelector('#summary-price')?.textContent;
+  const price = sig?.preisText || document.querySelector('#summary-price')?.textContent;
   if (price) {
     ctx.font = '800 34px "Baloo 2", sans-serif';
-    ctx.fillStyle = theme?.accent || '#9B7EDE';
+    ctx.fillStyle = sig?.accent || theme?.accent || '#9B7EDE';
     ctx.fillText(price, W / 2, 916);
   }
   // powered by — dezent

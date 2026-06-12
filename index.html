@@ -34,9 +34,62 @@
       <!-- ATTRACT -->
       <div class="screen active" data-screen-id="attract">
         <h1 class="hero-title">Dein Drink.<br /><span class="grad">Live gemixt.</span></h1>
-        <p class="hero-sub">Stell dir deinen Drink in 3 Schritten zusammen — und sieh zu, wie er im Becher entsteht.</p>
-        <button class="cta" id="btn-start" data-testid="start">Drink bauen</button>
+        <p class="hero-sub">Wähl von unserer Signature-Karte — oder stell dir deinen Drink selbst zusammen.</p>
+        <div id="mode-ctas">
+          <button class="cta" id="btn-signature" data-testid="mode-signature">Signature-Karte ansehen</button>
+          <button class="cta ghost" id="btn-start" data-testid="start">Create your own — selbst mixen</button>
+        </div>
         <p class="hint">Bezahlt wird ganz entspannt an der Theke.</p>
+      </div>
+
+      <!-- SIGNATURE: GALERIE -->
+      <div class="screen" data-screen-id="sig-gallery">
+        <h2 class="step-title">Signature-Karte</h2>
+        <p class="sig-sub">Unsere Lieblinge — frisch gemixt, so wie auf dem Foto.</p>
+        <div id="sig-category-chips" class="sig-chip-row" data-testid="sig-filters"></div>
+        <div id="sig-drink-cards" class="sig-grid" data-testid="sig-gallery"></div>
+        <button class="cta ghost" id="btn-sig-gallery-back">← Zurück zum Start</button>
+      </div>
+
+      <!-- SIGNATURE: DRINK-STORY -->
+      <div class="screen" data-screen-id="sig-story">
+        <div id="sig-story-media">
+          <img id="sig-story-hero" alt="" />
+          <video id="sig-story-video" muted loop playsinline preload="none" data-testid="sig-video" aria-hidden="true"></video>
+        </div>
+        <div class="sig-story-head">
+          <h2 class="step-title" id="sig-story-name"></h2>
+          <span class="sig-kat-tag" id="sig-story-kat"></span>
+        </div>
+        <p id="sig-story-desc" class="sig-desc"></p>
+        <div class="lbl sig-lbl">Zutaten</div>
+        <ul id="sig-story-zutaten" class="sig-zutaten"></ul>
+        <div id="sig-story-allergen" data-testid="sig-allergene"></div>
+        <div class="price-row"><span>Basis (M)</span><strong id="sig-story-price">0,00 €</strong></div>
+        <div class="sig-btn-row">
+          <button class="cta ghost" id="btn-sig-back">← Karte</button>
+          <button class="cta" id="btn-sig-customize" data-testid="sig-customize">Anpassen</button>
+        </div>
+      </div>
+
+      <!-- SIGNATURE: ANPASSEN -->
+      <div class="screen" data-screen-id="sig-custom">
+        <div class="sig-custom-head">
+          <img id="sig-custom-thumb" alt="" />
+          <div>
+            <div class="sig-custom-name" id="sig-custom-name"></div>
+            <div class="sig-custom-base" id="sig-custom-base"></div>
+          </div>
+        </div>
+        <div class="level-row" id="sig-size-row"></div>
+        <div class="level-row" id="sig-suesse-row"></div>
+        <div class="level-row" id="sig-eis-row"></div>
+        <p class="hint sig-hint">Dein Drink wird frisch nach Rezept gemixt — das Foto bleibt das Original.</p>
+        <div class="price-row"><span>Gesamt</span><strong id="sig-custom-price" data-testid="sig-price">0,00 €</strong></div>
+        <div class="sig-btn-row">
+          <button class="cta ghost" id="btn-sig-custom-back">← Zurück</button>
+          <button class="cta" id="btn-sig-order" data-testid="sig-order">Bestellen</button>
+        </div>
       </div>
 
       <!-- STEP 1: THEME + BASIS -->

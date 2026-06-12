@@ -1,5 +1,8 @@
 // MIXR service worker — precache app shell + sprites, network-first for API.
-const CACHE = 'mixr-v1';
+// v2: Signature-Modus — neue Screens in index.html ('/'), alter Cache muss weg.
+// Signature-Loops/Heroes sind bewusst NICHT im Precache (lazy via fetch-Handler,
+// Range-Requests gehen weiter am SW vorbei — Lesson nicht regressieren).
+const CACHE = 'mixr-v2';
 const SPRITES = ['tapioka', 'popping-boba', 'kokos-jelly', 'eiswuerfel', 'erdbeere', 'mango', 'banane', 'blaubeeren', 'kiwi', 'minze', 'sahne', 'karamell-drizzle'];
 const PRECACHE = ['/', '/manifest.webmanifest', '/icon.svg', '/menu.json', ...SPRITES.map(s => `/sprites/${s}.png`)];
 

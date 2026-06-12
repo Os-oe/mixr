@@ -230,3 +230,87 @@ body {
 @media (min-width: 700px) {
   #stage-wrap { height: 44dvh; }
 }
+
+/* ===================== Signature-Modus ===================== */
+/* Im Signature-Flow tritt die Cup-Bühne zurück — die Foto-Heroes sind der
+   Star. Attract behält die Bühne (dort läuft der Attract-Loop weiter). */
+#app[data-mode="signature"]:not([data-screen="attract"]) #stage-wrap { display: none; }
+#app[data-mode="signature"] #stepper { visibility: hidden; }
+
+#mode-ctas { display: flex; flex-direction: column; gap: 10px; }
+#mode-ctas .cta { margin-top: 0; min-height: 54px; }
+
+.sig-sub { color: var(--muted); font-size: 14.5px; margin: -6px 0 14px; }
+
+/* Kategorie-Filter-Chips */
+.sig-chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+.sig-chip-row::-webkit-scrollbar { display: none; }
+.sig-chip {
+  flex: none; min-height: 44px; padding: 9px 16px; border-radius: 999px;
+  border: 2px solid transparent; background: var(--card); color: var(--ink);
+  font-family: 'Nunito'; font-weight: 700; font-size: 14px; cursor: pointer;
+  box-shadow: var(--shadow); transition: all .25s ease;
+}
+.sig-chip.active { border-color: var(--accent); background: #fff; }
+
+/* Galerie — große Foto-Karten, viel Weißraum */
+.sig-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+.sig-card {
+  position: relative; display: block; padding: 0; border: 0; text-align: left;
+  border-radius: var(--radius); overflow: hidden; background: var(--card);
+  box-shadow: var(--shadow); cursor: pointer; font-family: 'Nunito';
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sig-card:active { transform: scale(.975); }
+.sig-card[disabled] { cursor: not-allowed; }
+.sig-card[disabled] .sig-card-img { filter: grayscale(.7); opacity: .55; }
+.sig-card-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+.sig-card-body { display: block; padding: 10px 12px 12px; }
+.sig-card-name { display: block; font-weight: 800; font-size: 14.5px; color: var(--ink); line-height: 1.25; }
+.sig-card-meta { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.sig-card .soldout-badge { z-index: 1; }
+
+/* Drink-Story — Loop crossfadet sanft über Hero/Poster */
+#sig-story-media {
+  position: relative; border-radius: 22px; overflow: hidden;
+  aspect-ratio: 4 / 5; max-height: 48dvh; width: 100%;
+  background: #efe9f4; box-shadow: var(--shadow); margin-bottom: 14px;
+}
+#sig-story-media img, #sig-story-media video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+#sig-story-video { opacity: 0; transition: opacity .25s ease; }
+#sig-story-video.playing { opacity: 1; }
+/* Ken-Burns auf dem Hero, solange kein Loop spielt — ruhig und subtil */
+@keyframes sig-ken-burns {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(1.07) translateY(-1.5%); }
+}
+#sig-story-hero { animation: sig-ken-burns 14s ease-in-out infinite alternate; }
+
+.sig-story-head { display: flex; align-items: center; gap: 10px; }
+.sig-story-head .step-title { margin: 0; flex: 1; }
+.sig-kat-tag {
+  flex: none; font-size: 12px; font-weight: 800; color: var(--accent2);
+  background: #fff; border-radius: 999px; padding: 5px 12px; box-shadow: var(--shadow);
+}
+.sig-desc { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 8px 0 12px; }
+.sig-lbl { font-weight: 800; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.sig-zutaten { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 12px; }
+.sig-zutaten li {
+  background: var(--card); border-radius: 999px; padding: 6px 12px;
+  font-size: 13px; font-weight: 700; box-shadow: var(--shadow);
+}
+.sig-btn-row { display: flex; gap: 10px; margin-top: 4px; }
+.sig-btn-row .cta { margin-top: 0; }
+.sig-btn-row .cta.ghost { flex: 0 0 38%; }
+.sig-btn-row .cta:not(.ghost) { flex: 1; }
+
+/* Anpassen */
+.sig-custom-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+#sig-custom-thumb { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; box-shadow: var(--shadow); }
+.sig-custom-name { font-family: 'Baloo 2'; font-weight: 700; font-size: 18px; }
+.sig-custom-base { color: var(--muted); font-size: 13px; font-weight: 700; }
+#sig-size-row .opts button small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 700; margin-top: 1px; }
+#sig-size-row .opts button, #sig-suesse-row .opts button, #sig-eis-row .opts button { min-height: 44px; }
+.sig-hint { text-align: left; margin: 8px 0 0; }
