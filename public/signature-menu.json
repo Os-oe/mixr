@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "kategorien": [
+    { "id": "mocktail", "name": "Mocktails" },
+    { "id": "bubble-tea", "name": "Bubble Tea" },
+    { "id": "smoothie", "name": "Smoothies" },
+    { "id": "kaffee", "name": "Kaffee" }
+  ],
+  "groessen": [
+    { "id": "S", "label": "S", "delta": -0.5 },
+    { "id": "M", "label": "M", "delta": 0 },
+    { "id": "L", "label": "L", "delta": 0.5 }
+  ],
+  "drinks": [
+    {
+      "id": "strawberry-mojito",
+      "name": "Strawberry Mojito",
+      "kategorie": "mocktail",
+      "beschreibung": "Zerstoßene Erdbeeren, frische Minze und Limette auf knisterndem Crushed Ice — alkoholfrei und federleicht.",
+      "zutaten": ["Erdbeeren", "Frische Minze", "Limette", "Rohrzucker", "Soda", "Crushed Ice"],
+      "allergene": [],
+      "preis": 5.9,
+      "hero": "/assets/photoreal/signature-strawberry-mojito-hero.jpg",
+      "loop": "/assets/photoreal/signature-strawberry-mojito-loop.mp4",
+      "poster": "/assets/photoreal/signature-strawberry-mojito-poster.jpg",
+      "verfuegbar": true
+    },
+    {
+      "id": "brown-sugar",
+      "name": "Brown Sugar Milk Tea",
+      "kategorie": "bubble-tea",
+      "beschreibung": "Cremiger Schwarztee mit warmem Braunzucker-Karamell und zarten Tapioka-Perlen — die Tiger-Streifen inklusive.",
+      "zutaten": ["Schwarzer Tee", "Vollmilch", "Braunzucker-Sirup", "Tapioka-Perlen"],
+      "allergene": ["milch"],
+      "preis": 6.2,
+      "hero": "/assets/photoreal/signature-brown-sugar-hero.jpg",
+      "loop": "/assets/photoreal/signature-brown-sugar-loop.mp4",
+      "poster": "/assets/photoreal/signature-brown-sugar-poster.jpg",
+      "verfuegbar": true
+    },
+    {
+      "id": "mango-maracuja",
+      "name": "Mango-Maracuja Smoothie",
+      "kategorie": "smoothie",
+      "beschreibung": "Sonnengereifte Mango und spritzige Maracuja, samtig gemixt — ein Schluck Urlaub im Glas.",
+      "zutaten": ["Mango", "Maracuja", "Banane", "Kokoswasser", "Eis"],
+      "allergene": [],
+      "preis": 5.9,
+      "hero": "/assets/photoreal/signature-mango-maracuja-hero.jpg",
+      "loop": null,
+      "poster": null,
+      "verfuegbar": true
+    },
+    {
+      "id": "tequila-sunrise",
+      "name": "Tequila Sunrise",
+      "kategorie": "mocktail",
+      "beschreibung": "Leuchtender Sonnenaufgang aus Orange und Grenadine — unsere alkoholfreie Interpretation des Klassikers.",
+      "zutaten": ["Orangensaft", "Grenadine", "Limette", "Eiswürfel"],
+      "allergene": [],
+      "preis": 5.5,
+      "hero": "/assets/photoreal/signature-tequila-sunrise-hero.jpg",
+      "loop": null,
+      "poster": null,
+      "verfuegbar": true
+    },
+    {
+      "id": "iced-caramel-latte",
+      "name": "Iced Caramel Latte",
+      "kategorie": "kaffee",
+      "beschreibung": "Doppelter Espresso auf eiskalter Milch mit goldenem Karamell — cremig, kühl, wach machend.",
+      "zutaten": ["Espresso", "Vollmilch", "Karamell-Sirup", "Eiswürfel"],
+      "allergene": ["milch"],
+      "preis": 4.9,
+      "hero": "/assets/photoreal/signature-iced-caramel-latte-hero.jpg",
+      "loop": null,
+      "poster": null,
+      "verfuegbar": true
+    },
+    {
+      "id": "taro-milk-tea",
+      "name": "Taro Milk Tea",
+      "kategorie": "bubble-tea",
+      "beschreibung": "Samtig-süßer Taro mit cremiger Milch und Tapioka-Perlen — das lila Original, mild wie Vanille.",
+      "zutaten": ["Taro", "Vollmilch", "Tapioka-Perlen"],
+      "allergene": ["milch"],
+      "preis": 6.4,
+      "hero": "/assets/photoreal/signature-taro-milk-tea-hero.jpg",
+      "loop": null,
+      "poster": null,
+      "verfuegbar": true
+    },
+    {
+      "id": "trauben-rosmarin",
+      "name": "Trauben-Rosmarin Spritz",
+      "kategorie": "mocktail",
+      "beschreibung": "Kühle rote Traube trifft Rosmarin und feine Perlage — herb, frisch und elegant.",
+      "zutaten": ["Roter Traubensaft", "Rosmarin", "Zitrone", "Soda", "Eis"],
+      "allergene": [],
+      "preis": 4.5,
+      "hero": "/assets/photoreal/signature-trauben-rosmarin-hero.jpg",
+      "loop": null,
+      "poster": null,
+      "verfuegbar": true
+    }
+  ]
+}

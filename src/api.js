@@ -10,6 +10,9 @@ async function j(method, url, body) {
 
 export const api = {
   menu: () => j('GET', '/api/menu'),
+  signatureMenu: () => j('GET', '/api/signature-menu'),
+  toggleSignatureDrink: (id, verfuegbar) => j('PATCH', `/api/admin/signature/${id}`, { verfuegbar }),
+  setDefaultMode: (defaultMode) => j('PATCH', '/api/admin/config', { defaultMode }),
   createOrder: (order) => j('POST', '/api/orders', order),
   order: (id) => j('GET', `/api/orders/${id}`),
   orders: () => j('GET', '/api/orders'),

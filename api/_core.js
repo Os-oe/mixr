@@ -7,9 +7,13 @@ const store = {
   orders: new Map(),
   orderSeq: 0,
   overrides: {},            // ingredientId -> { verfuegbar?, preis? }
+  sigOverrides: {},         // signature drinkId -> { verfuegbar? }
+  config: { defaultMode: 'signature' }, // Start-Modus für Gäste ohne gemerkte Wahl
   highscore: { date: null, entries: [] },
   menuCache: null,
-  menuMtime: 0
+  menuMtime: 0,
+  sigMenuCache: null,
+  sigMenuMtime: 0
 };
 
 function menuPath() {
@@ -43,6 +47,38 @@ export function loadMenu() {
   return menu;
 }
 
+function sigMenuPath() {
+  const candidates = [
+    process.env.SIGNATURE_MENU_PATH,
+    path.join(process.cwd(), 'public', 'signature-menu.json'),
+    path.join(process.cwd(), 'signature-menu.json'),
+    new URL('../public/signature-menu.json', import.meta.url).pathname
+  ].filter(Boolean);
+  for (const p of candidates) { try { if (fs.existsSync(p)) return p; } catch {} }
+  return null;
+}
+
+export function loadSignatureMenu() {
+  const p = sigMenuPath();
+  if (p) {
+    try {
+      const mtime = fs.statSync(p).mtimeMs;
+      if (!store.sigMenuCache || mtime !== store.sigMenuMtime) {
+        store.sigMenuCache = JSON.parse(fs.readFileSync(p, 'utf8'));
+        store.sigMenuMtime = mtime;
+      }
+    } catch (e) { /* keep cache */ }
+  }
+  if (!store.sigMenuCache) throw new Error('signature-menu.json not found');
+  const menu = JSON.parse(JSON.stringify(store.sigMenuCache));
+  for (const d of menu.drinks) {
+    const ov = store.sigOverrides[d.id];
+    if (ov) Object.assign(d, ov);
+  }
+  menu.defaultMode = store.config.defaultMode;
+  return menu;
+}
+
 function today() { return new Date().toISOString().slice(0, 10); }
 
 function ensureHighscoreDay() {
@@ -56,6 +92,7 @@ export function route(method, pathname, body) {
   const seg = pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
 
   if (seg[0] === 'menu' && method === 'GET') return ok(loadMenu());
+  if (seg[0] === 'signature-menu' && method === 'GET') return ok(loadSignatureMenu());
 
   if (seg[0] === 'admin') {
     if (seg[1] === 'ingredient' && seg[2] && method === 'PATCH') {
@@ -65,7 +102,23 @@ export function route(method, pathname, body) {
       store.overrides[seg[2]] = { ...(store.overrides[seg[2]] || {}), ...patch };
       return ok({ id: seg[2], override: store.overrides[seg[2]] });
     }
-    if (seg[1] === 'reset' && method === 'POST') { store.overrides = {}; return ok({ reset: true }); }
+    if (seg[1] === 'signature' && seg[2] && method === 'PATCH') {
+      const patch = {};
+      if (typeof body?.verfuegbar === 'boolean') patch.verfuegbar = body.verfuegbar;
+      store.sigOverrides[seg[2]] = { ...(store.sigOverrides[seg[2]] || {}), ...patch };
+      return ok({ id: seg[2], override: store.sigOverrides[seg[2]] });
+    }
+    if (seg[1] === 'config' && method === 'PATCH') {
+      if (['signature', 'classic'].includes(body?.defaultMode)) store.config.defaultMode = body.defaultMode;
+      return ok(store.config);
+    }
+    if (seg[1] === 'config' && method === 'GET') return ok(store.config);
+    if (seg[1] === 'reset' && method === 'POST') {
+      store.overrides = {};
+      store.sigOverrides = {};
+      store.config = { defaultMode: 'signature' };
+      return ok({ reset: true });
+    }
     if (seg[1] === 'overrides' && method === 'GET') return ok(store.overrides);
   }
 
