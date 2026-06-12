@@ -92,3 +92,45 @@ PixiJS v8 + GSAP + Vercel), wiederverwendbar für künftige App-Builds.
 | Nano Banana 2 Sprites (Anchor ×2 + Serie 12) | 14 Renders | 0,70 € |
 | SFX | prozedural | 0,00 € |
 | **Gesamt** | | **0,70 €** (Budget 20 €, Konzept-Schätzung ≤ 20 €) |
+
+## Signature-Rebuild — Ship-Review (12.06.2026)
+- **Sold-out gehört auf den Server.** Client-Polling + disabled-Buttons sind
+  nur UI; der Orders-POST prüft jetzt `sigId` gegen die Overrides (409).
+  Zusätzlich: placeOrder rechecked das frische Menü, der 4s-Poll wirkt auch
+  auf sig-story/sig-custom (Kickback zur Galerie mit Hinweis). Merksatz: jedes
+  „/admin wirkt sofort"-Versprechen braucht eine letzte Server-Instanz.
+- **Preis bleibt bewusst Client-Vertrauen** (`preis` im Order-Body wird nicht
+  validiert) — Demo-Parität zum Classic-Flow. Für echten Betrieb: Preis
+  server-seitig aus Menü + Größe rechnen.
+- **Loop-Videos müssen aus dem Hero generiert werden** (Start-Frame/Referenz),
+  sonst springt der 250ms-Crossfade sichtbar auf eine andere Komposition.
+  strawberry-mojito-Loop deshalb deaktiviert (`loop: null` → Ken-Burns wirkt
+  hochwertiger als der Kontinuitätsbruch). Asset liegt noch in
+  `public/assets/photoreal/` für den Neu-Render.
+- **CSS-Variablen auf `documentElement` immer beim Verlassen zurücksetzen**
+  (`removeProperty` → :root-Default greift). Sonst leakt der Kategorie-Akzent
+  der Drink-Story auf Galerie/Attract (Brand-Drift, Kaffee = braune CTAs).
+- **Horizontale Chip-Scroller brauchen eine Affordance**: `mask-image`-Edge-Fade
+  + `::after`-Spacer, sonst liest sich der gekappte Chip als Layout-Bug.
+- **Keine zwei `float:right` in benachbarten Zeilen einer Card** (/bar:
+  Preis klebte am Zeitstempel) — flex + `margin-left:auto` statt floats.
+- **SW-Deploy-Verhalten bestätigt (Live-Check):** cache-first `/` heißt:
+  Reload 1 nach Deploy = noch altes index.html + neuer SW installiert
+  (skipWaiting/claim, alter Cache wird gelöscht), Reload 2 = neue Version.
+  Live-E2E nach Deploy deshalb immer mit zweitem Load prüfen. Cache enthielt
+  nach Aktivierung nur `mixr-v2` mit frischem Markup.
+
+### Offene P3s (Review 12.06., bewusst nicht gefixt)
+- Soldout-Badge „AUS" in der Galerie unstyled (Badge-CSS nur auf `.opt-card`
+  gescoped, `.sig-card` zeigt Inline-Text) — Test prüft nur Text, nicht Optik.
+- Admin-„Start-Modus" ist auf echtem Kiosk totes UI: localStorage `mixr-mode`
+  übersteuert dauerhaft, Reset erreicht das Gerät nicht (TTL oder Reset bei
+  Done→Restart empfohlen).
+- Runtime-Cache `/assets/` wächst über Deploys unbegrenzt (keine Eviction).
+- „Zurück" aus Anpassen resettet Größe/Süße/Eis (openDrink setzt hart M/2/2).
+- Story-Heroes haben ~40% toten Headroom im 4/5-Frame (`object-position`-Tweak).
+- Emojis als UI-Icons (🔇/🎮/▶/Status-Icons) brechen das Premium-Niveau.
+- /bar-Header bricht <480px unschön um; Schusterjunge „Foto." in der
+  Galerie-Subline; 7. Galerie-Karte steht allein im 2er-Raster.
+- Suite/Server nur ohne CLI-Sandbox lauffähig (Port-Bind geblockt — Umgebung,
+  kein Code-Problem).
