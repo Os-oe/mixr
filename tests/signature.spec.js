@@ -72,6 +72,8 @@ test('story-medien: Loop-Video spielt bei brown-sugar, Hero+Ken-Burns bei Drink 
   await page.locator('#btn-sig-back').click();
   await expect(video).not.toHaveClass(/playing/);
   expect(await video.getAttribute('src')).toBeNull();
+  // Kategorie-Akzent leakt nicht aus der Story (Inline-Override entfernt -> Brand-Lila)
+  expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--accent'))).toBe('');
 
   // Drink ohne Loop: Hero bleibt, kein Video
   await page.getByTestId('sig-drink-mango-maracuja').click();
@@ -106,6 +108,13 @@ test('mode-persistenz: Wahl überlebt Reload (localStorage), Admin-Default greif
 test('admin sold-out: Signature-Drink wird live in der Galerie gesperrt und wieder freigegeben', async ({ page, request }) => {
   const r = await request.patch('/api/admin/signature/taro-milk-tea', { data: { verfuegbar: false } });
   expect(r.ok()).toBeTruthy();
+
+  // Server-Gate: Bestellung für den gesperrten Drink wird abgelehnt (409)
+  const blocked = await request.post('/api/orders', {
+    data: { drinkName: 'Taro Milk Tea', sigId: 'taro-milk-tea', preis: 6.4 }
+  });
+  expect(blocked.status()).toBe(409);
+
   await page.goto('/');
   await page.getByTestId('mode-signature').click();
   const card = page.getByTestId('sig-drink-taro-milk-tea');
@@ -114,6 +123,32 @@ test('admin sold-out: Signature-Drink wird live in der Galerie gesperrt und wied
   // wieder verfügbar -> Galerie-Polling hebt die Sperre live auf
   await request.patch('/api/admin/signature/taro-milk-tea', { data: { verfuegbar: true } });
   await expect(card).toBeEnabled({ timeout: 10000 });
+});
+
+test('sold-out mitten im Flow: Gast auf der Drink-Story wird zur Galerie zurückgeführt, Bestellen-Recheck blockt', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByTestId('mode-signature').click();
+  await expect(page.locator('[data-screen-id="sig-gallery"]')).toHaveClass(/active/, { timeout: 15000 });
+  await page.getByTestId('sig-drink-taro-milk-tea').click();
+  await expect(page.locator('[data-screen-id="sig-story"]')).toHaveClass(/active/);
+
+  // Drink wird gesperrt, während der Gast die Story ansieht -> Poll führt zurück
+  await request.patch('/api/admin/signature/taro-milk-tea', { data: { verfuegbar: false } });
+  await expect(page.locator('[data-screen-id="sig-gallery"]')).toHaveClass(/active/, { timeout: 10000 });
+  await expect(page.getByTestId('sig-note')).toContainText('ausverkauft');
+  await expect(page.getByTestId('sig-drink-taro-milk-tea')).toBeDisabled();
+
+  // Recheck direkt beim Bestellen: anderer Drink offen, Sperre kommt zwischen Poll und Tap
+  await request.patch('/api/admin/signature/taro-milk-tea', { data: { verfuegbar: true } });
+  await expect(page.getByTestId('sig-drink-taro-milk-tea')).toBeEnabled({ timeout: 10000 });
+  await page.getByTestId('sig-drink-taro-milk-tea').click();
+  await page.getByTestId('sig-customize').click();
+  await request.patch('/api/admin/signature/taro-milk-tea', { data: { verfuegbar: false } });
+  await page.getByTestId('sig-order').click();
+  // KEINE Bestellung, stattdessen zurück in die Galerie mit Hinweis
+  await expect(page.locator('[data-screen-id="sig-gallery"]')).toHaveClass(/active/, { timeout: 10000 });
+  await expect(page.getByTestId('sig-note')).toContainText('ausverkauft');
+  expect(await page.evaluate(() => window.__mixr.state.order)).toBeFalsy();
 });
 
 test('share-card nutzt das Signature-Drink-Hero direkt', async ({ page, request }) => {

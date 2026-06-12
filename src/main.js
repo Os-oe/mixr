@@ -715,7 +715,8 @@ async function boot() {
       if (state.screen === 'step2') renderStep2();
       if (state.screen === 'step3') renderStep3();
     } catch {}
-    if (state.screen === 'sig-gallery') state.sig?.poll();
+    // Signature pollt auch auf Story/Anpassen — Sold-out muss den Gast dort erreichen
+    if (['sig-gallery', 'sig-story', 'sig-custom'].includes(state.screen)) state.sig?.poll();
   }, 4000);
 
   show('attract');

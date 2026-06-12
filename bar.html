@@ -20,17 +20,18 @@
     .order-card { background:var(--card); border-radius:18px; padding:16px; border-left:6px solid var(--accent); }
     .order-card.fast_fertig { border-left-color:var(--warn); }
     .order-card.fertig { border-left-color:var(--ok); opacity:.75; }
-    .nummer { font-family:'Baloo 2'; font-size:20px; font-weight:800; }
+    .nummer { font-family:'Baloo 2'; font-size:20px; font-weight:800; display:flex; align-items:baseline; gap:10px; }
     .dname { color:#cfc4dd; font-weight:700; margin:2px 0 8px; }
     .items { font-size:13px; color:#a99cb8; margin-bottom:6px; }
     .allergen { font-size:11.5px; color:var(--warn); font-weight:700; margin-bottom:10px; }
-    .price { font-weight:800; float:right; }
+    .price { font-weight:800; margin-left:auto; }
     .actions { display:flex; gap:8px; margin-top:8px; }
     .actions button { flex:1; padding:10px 8px; border:0; border-radius:12px; font-family:'Baloo 2'; font-weight:700; font-size:14px; cursor:pointer; background:#4d4258; color:var(--ink); }
     .actions button.primary { background:var(--accent); }
     .actions button.done { background:var(--ok); }
     .empty { grid-column:1/-1; text-align:center; color:#8a7d99; padding:60px 0; font-size:16px; }
-    .age { font-size:11px; color:#8a7d99; float:right; }
+    /* eigene Meta-Zeile statt float — sonst klebt der Preis am Zeitstempel */
+    .age { display:block; font-size:11px; color:#8a7d99; margin-bottom:2px; }
   </style>
 </head>
 <body>

@@ -242,9 +242,24 @@ body {
 
 .sig-sub { color: var(--muted); font-size: 14.5px; margin: -6px 0 14px; }
 
-/* Kategorie-Filter-Chips */
-.sig-chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+/* Sold-out-Hinweis (z.B. Drink wurde mitten im Flow gesperrt) */
+.sig-note {
+  margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: rgba(232, 74, 111, .12); color: #c2304f;
+  font-size: 13.5px; font-weight: 700;
+}
+
+/* Kategorie-Filter-Chips — horizontaler Scroller mit Edge-Fade als Affordance
+   (sonst wirkt ein hart gekappter Chip wie ein Layout-Bug) */
+.sig-chip-row {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+}
 .sig-chip-row::-webkit-scrollbar { display: none; }
+/* Spacer am Zeilenende: der letzte Chip kann aus dem Fade herausscrollen */
+.sig-chip-row::after { content: ''; flex: 0 0 26px; }
 .sig-chip {
   flex: none; min-height: 44px; padding: 9px 16px; border-radius: 999px;
   border: 2px solid transparent; background: var(--card); color: var(--ink);

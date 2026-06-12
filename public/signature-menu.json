@@ -21,8 +21,8 @@
       "allergene": [],
       "preis": 5.9,
       "hero": "/assets/photoreal/signature-strawberry-mojito-hero.jpg",
-      "loop": "/assets/photoreal/signature-strawberry-mojito-loop.mp4",
-      "poster": "/assets/photoreal/signature-strawberry-mojito-poster.jpg",
+      "loop": null,
+      "poster": null,
       "verfuegbar": true
     },
     {

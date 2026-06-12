@@ -124,6 +124,16 @@ export function route(method, pathname, body) {
 
   if (seg[0] === 'orders') {
     if (!seg[1] && method === 'POST') {
+      // Sold-out-Gate für Signature-Bestellungen: /admin verspricht „wirkt
+      // sofort im Gast-Flow" — der Server ist die letzte Instanz dafür.
+      // (Preis bleibt bewusst Client-Vertrauen — Demo-Parität zum Classic-Flow.)
+      if (typeof body?.sigId === 'string') {
+        try {
+          const d = loadSignatureMenu().drinks.find(x => x.id === body.sigId);
+          if (!d) return err(404, 'signature drink not found');
+          if (d.verfuegbar === false) return err(409, 'drink sold out');
+        } catch { /* signature-menu.json fehlt -> kein Gate möglich */ }
+      }
       store.orderSeq += 1;
       const id = 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const order = {

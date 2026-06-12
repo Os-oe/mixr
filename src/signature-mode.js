@@ -40,7 +40,7 @@ export class SignatureMode {
 
   _bindStatic() {
     $('#btn-sig-gallery-back').onclick = () => { this.haptic(); this.exitToAttract(); };
-    $('#btn-sig-back').onclick = () => { this.haptic(); this.stopStoryVideo(); this.show('sig-gallery'); this.renderGallery(); };
+    $('#btn-sig-back').onclick = () => { this.haptic(); this.stopStoryVideo(); this.resetAccent(); this.show('sig-gallery'); this.renderGallery(); };
     $('#btn-sig-customize').onclick = () => { this.haptic(); this.openCustomize(); };
     $('#btn-sig-custom-back').onclick = () => { this.haptic(); this.openDrink(this.drink.id); };
     $('#btn-sig-order').onclick = () => {
@@ -53,12 +53,22 @@ export class SignatureMode {
 
   exitToAttract() {
     this.stopStoryVideo();
+    this.resetAccent();
     this.show('attract');
     if (this.state.onSignatureExit) this.state.onSignatureExit();
   }
 
+  // Kategorie-Akzent darf nicht aus der Story heraus leaken (Brand-Drift):
+  // Inline-Override entfernen -> :root-Defaults (MIXR-Lila) greifen wieder.
+  resetAccent() {
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--accent2');
+  }
+
   openGallery() {
     this.stopStoryVideo();
+    this.resetAccent();
+    this.notice = null;
     this.show('sig-gallery');
     this.renderGallery();
   }
@@ -66,6 +76,10 @@ export class SignatureMode {
   // Galerie nur bei Datenänderung neu bauen (Polling-Lesson: DOM-Churn frisst Taps)
   renderGallery() {
     if (!this.menu) return;
+    // Hinweis (z.B. „gerade ausverkauft") vor dem Signatur-Vergleich pflegen,
+    // damit er auch ohne Daten-Diff erscheint/verschwindet.
+    const note = $('#sig-gallery-note');
+    if (note) { note.hidden = !this.notice; note.textContent = this.notice || ''; }
     const drinks = this.menu.drinks.filter(d => !this.kategorie || d.kategorie === this.kategorie);
     const sig = JSON.stringify([this.kategorie, drinks.map(d => [d.id, d.verfuegbar])]);
     if (sig === this._gallerySig && $('#sig-drink-cards').children.length) return;
@@ -101,13 +115,31 @@ export class SignatureMode {
     api.signatureMenu().then(m => {
       this.state.sigMenu = m;
       if (this.state.screen === 'sig-gallery') this.renderGallery();
+      // Sold-out wirkt auch mitten in Story/Anpassen (admin: „wirkt sofort"):
+      // gesperrter Drink -> zurück zur Galerie mit Hinweis, sonst Daten auffrischen.
+      if ((this.state.screen === 'sig-story' || this.state.screen === 'sig-custom') && this.drink) {
+        const fresh = m.drinks.find(d => d.id === this.drink.id);
+        if (!fresh || fresh.verfuegbar === false) this.handleSoldOut(this.drink);
+        else this.drink = fresh;
+      }
     }).catch(() => {});
+  }
+
+  // Drink wurde (per /admin) gesperrt -> raus aus Story/Anpassen, Galerie zeigt AUS.
+  handleSoldOut(d) {
+    this.stopStoryVideo();
+    this.resetAccent();
+    this.notice = `${d.name} ist gerade ausverkauft.`;
+    this._gallerySig = null;
+    this.show('sig-gallery');
+    this.renderGallery();
   }
 
   // ---------- Drink-Story ----------
   openDrink(id) {
     this.drink = this.menu.drinks.find(d => d.id === id);
     if (!this.drink) return;
+    this.notice = null;
     this.size = 'M'; this.suesse = 2; this.eis = 2;
     this.show('sig-story');
     this.renderStory();
@@ -234,18 +266,33 @@ export class SignatureMode {
   // ---------- Bestellen über die bestehende Order-Pipeline ----------
   async placeOrder() {
     const d = this.drink;
+    // Sold-out-Recheck mit frischem Menü direkt vor der Bestellung — der
+    // 4s-Poll kann einen Admin-Toggle verpasst haben.
+    try {
+      const m = await api.signatureMenu();
+      this.state.sigMenu = m;
+      const fresh = m.drinks.find(x => x.id === d.id);
+      if (!fresh || fresh.verfuegbar === false) { this.handleSoldOut(d); return; }
+    } catch { /* Netzfehler -> Server-Gate (409) fängt den Rest */ }
     const lv = this.state.menu.levels;
     const preis = this.totalPrice();
-    const order = await api.createOrder({
-      drinkName: d.name,
-      theme: null, // Signature-Drinks haben kein Konfigurator-Theme
-      items: (d.zutaten || []).map(z => ({
-        id: z.toLowerCase().replace(/[^a-zä-ü0-9]+/gi, '-'), name: z, kategorie: 'signature'
-      })),
-      levels: { suesse: this.suesse, eis: this.eis, size: this.size },
-      allergene: d.allergene || [],
-      preis
-    });
+    let order;
+    try {
+      order = await api.createOrder({
+        drinkName: d.name,
+        sigId: d.id, // Server prüft Sold-out (409, letzte Instanz)
+        theme: null, // Signature-Drinks haben kein Konfigurator-Theme
+        items: (d.zutaten || []).map(z => ({
+          id: z.toLowerCase().replace(/[^a-zä-ü0-9]+/gi, '-'), name: z, kategorie: 'signature'
+        })),
+        levels: { suesse: this.suesse, eis: this.eis, size: this.size },
+        allergene: d.allergene || [],
+        preis
+      });
+    } catch (e) {
+      if (String(e?.message || '').includes('409')) { this.handleSoldOut(d); return; }
+      throw e;
+    }
     this.state.order = order;
     // Quelle für die Share-Card: Drink-Hero direkt + Bestell-Texte
     this.state.sigOrderMeta = {
